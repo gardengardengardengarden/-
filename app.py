@@ -44,12 +44,12 @@ if st.button("주사위 던지기!", type="primary"):
         
         with col1:
             st.subheader("👤 플레이어")
-            st.write(f"결과: {user_dice[0]} + {user_dice[1]} + {user_dice[2]}")
+            st.write(f"결과: {user_dice[0]} + {user_dice[1]} + {user_dice[1]}")
             st.metric(label="합계", value=user_sum)
             
         with col2:
             st.subheader("🤖 봇")
-            st.write(f"결과: {bot_dice[0]} + {bot_dice[1]} + {bot_dice[2]}")
+            st.write(f"결과: {bot_dice[0]} + {bot_dice[1]} + {bot_dice[1]}")
             st.metric(label="합계", value=bot_sum)
             
         # 승패 판정
@@ -77,3 +77,4 @@ if st.session_state.history:
     for record in st.session_state.history[:5]: # 최신 5경기만 표시
 
         st.write(record)
+
