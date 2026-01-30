@@ -1,81 +1,77 @@
 import streamlit as st
 import random
-import time
 
 # 페이지 설정
-st.set_page_config(page_title="주사위 배틀", page_icon="🎲")
+st.set_page_config(page_title="주사위 배틀 게임", page_icon="🎲")
 
-st.title("🎲 주사위 대결 웹앱")
-st.write("두 개의 주사위를 던져 봇과 합계를 겨뤄보세요!")
+# --- 게임 상태 초기화 ---
+if 'player_hp' not in st.session_state:
+    st.session_state.player_hp = 15
+if 'bot_hp' not in st.session_state:
+    st.session_state.bot_hp = 15
+if 'game_log' not in st.session_state:
+    st.session_state.game_log = []
 
-# 세션 상태 초기화 (승패 기록 저장)
-if 'user_score' not in st.session_state:
-    st.session_state.user_score = 0
-if 'bot_score' not in st.session_state:
-    st.session_state.bot_score = 0
-if 'history' not in st.session_state:
-    st.session_state.history = []
+# --- 함수 정의 ---
+def roll_dice():
+    return random.randint(1, 6), random.randint(1, 6)
 
-# 사이드바에 전적 표시
-st.sidebar.header("📊 현재 전적")
-st.sidebar.write(f"플레이어: {st.session_state.user_score} 승")
-st.sidebar.write(f"봇: {st.session_state.bot_score} 승")
+def reset_game():
+    st.session_state.player_hp = 15
+    st.session_state.bot_hp = 15
+    st.session_state.game_log = []
 
-if st.sidebar.button("전적 초기화"):
-    st.session_state.user_score = 0
-    st.session_state.bot_score = 0
-    st.session_state.history = []
-    st.rerun()
+# --- UI 레이아웃 ---
+st.title("⚔️ 주사위 배틀 웹앱")
+st.write("주사위 2개의 합으로 봇과 대결하세요! 먼저 HP가 0이 되면 패배합니다.")
 
-# 게임 시작 버튼
-if st.button("주사위 던지기!", type="primary"):
-    with st.spinner('주사위를 굴리는 중...'):
-        time.sleep(0.5)
-        
-        # 주사위 굴리기 (1~6 사이의 숫자 2개씩)
-        user_dice = [random.randint(1, 6) for _ in range(2)]
-        bot_dice = [random.randint(1, 6) for _ in range(2)]
-        
-        user_sum = sum(user_dice)
-        bot_sum = sum(bot_dice)
-        
-        # 결과 화면 출력
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.subheader("👤 플레이어")
-            st.write(f"결과: {user_dice[0]} + {user_dice[1]}")
-            st.metric(label="합계", value=user_sum)
-            
-        with col2:
-            st.subheader("🤖 봇")
-            st.write(f"결과: {bot_dice[0]} + {bot_dice[1]}")
-            st.metric(label="합계", value=bot_sum)
-            
-        # 승패 판정
-        st.divider()
-        if user_sum > bot_sum:
-            st.balloons()
-            st.success(f"🎉 승리했습니다! ({user_sum} > {bot_sum})")
-            st.session_state.user_score += 1
-            result_text = "승리"
-        elif user_sum < bot_sum:
-            st.error(f"💀 패배했습니다... ({user_sum} < {bot_sum})")
-            st.session_state.bot_score += 1
-            result_text = "패배"
-        else:
-            st.warning(f"🤝 비겼습니다! ({user_sum} == {bot_sum})")
-            result_text = "무승부"
-            
-        # 기록 추가
-        st.session_state.history.insert(0, f"{result_text} (나: {user_sum} vs 봇: {bot_sum})")
+# HP 표시부
+col1, col2 = st.columns(2)
+with col1:
+    st.metric(label="나의 HP", value=st.session_state.player_hp, delta_color="normal")
+with col2:
+    st.metric(label="봇의 HP", value=st.session_state.bot_hp, delta_color="inverse")
 
-# 최근 게임 기록 표시
-if st.session_state.history:
-    st.write("---")
-    st.subheader("📜 최근 기록")
-    for record in st.session_state.history[:5]: # 최신 5경기만 표시
+# 배틀 진행 버튼
+if st.button("주사위 던지기! 🎲", disabled=st.session_state.player_hp <= 0 or st.session_state.bot_hp <= 0):
+    # 주사위 굴리기
+    p1, p2 = roll_dice()
+    b1, b2 = roll_dice()
+    
+    p_sum = p1 + p2
+    b_sum = b1 + b2
+    
+    diff = abs(p_sum - b_sum)
+    
+    # 승패 판정 로직
+    if p_sum > b_sum:
+        result_text = f"승리! 봇에게 {diff} 데미지를 입혔습니다."
+        st.session_state.bot_hp -= diff
+    elif p_sum < b_sum:
+        result_text = f"패배... 나에게 {diff} 데미지가 들어왔습니다."
+        st.session_state.player_hp -= diff
+    else:
+        result_text = "무승부! 아무 일도 일어나지 않았습니다."
 
-        st.write(record)
+    # 로그 기록
+    log_entry = f"나: {p_sum}({p1}+{p2}) vs 봇: {b_sum}({b1}+{b2}) | {result_text}"
+    st.session_state.game_log.insert(0, log_entry)
 
+# --- 결과 발표 ---
+if st.session_state.player_hp <= 0:
+    st.error("💀 당신은 패배했습니다!")
+    if st.button("다시 시작하기"):
+        reset_game()
+        st.rerun()
+elif st.session_state.bot_hp <= 0:
+    st.balloons()
+    st.success("🏆 축하합니다! 봇을 물리쳤습니다!")
+    if st.button("다시 시작하기"):
+        reset_game()
+        st.rerun()
 
+# --- 게임 로그 ---
+st.divider()
+st.subheader("📜 전투 기록")
+for log in st.session_state.game_log:
+    st.write(log)
