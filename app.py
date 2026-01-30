@@ -29,10 +29,10 @@ def play_round():
     
     if p_sum > b_sum:
         st.session_state.bot_hp -= diff
-        res = f"승리! 봇에게 {diff} 데미지 봇의 HP : {bot_hp}"
+        res = f"승리! 봇에게 {diff} 데미지 봇의 HP : {disp_b_hp}"
     elif p_sum < b_sum:
         st.session_state.player_hp -= diff
-        res = f"패배... 나에게 {diff} 데미지 나의 HP : {palyer_hp}"
+        res = f"패배... 나에게 {diff} 데미지 나의 HP : {disp_p_hp}"
     else:
         res = "무승부!"
 
@@ -78,4 +78,5 @@ st.divider()
 st.caption("최근 전투 기록")
 for log in st.session_state.game_log:
     st.write(log)
+
 
